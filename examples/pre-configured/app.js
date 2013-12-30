@@ -12,7 +12,7 @@ var MitreIDStrategy = require('passport-openidconnect').Strategy;
 var DOMAIN_NAME = '--insert-your-domain-name-here--';
 
 var SCOPES = 'profile email';
-// register a new client on https://mitreid.org/manage/dev/dynreg
+// register a new client at https://mitreid.org/manage/dev/dynreg
 var MITREID_CLIENT_ID = '--insert-mitreid-client-id-here--';
 var MITREID_CLIENT_SECRET = '--insert-mitreid-client-secret-here--';
 // your callback url
@@ -95,10 +95,7 @@ app.get('/auth/mitreid',
     passport.authenticate('openidconnect', { failureRedirect: '/login' }),
     function(req, res){
         // The request will be redirected to MitreID for authentication, so this
-        // function will not be called. ???
-        //
-        // Successful authentication, redirect home.
-        res.redirect('/');
+        // function will not be called.
 });
 
 // GET /auth/mitrid/callback
@@ -109,6 +106,7 @@ app.get('/auth/mitreid',
 app.get('/auth/mitreid/callback',
     passport.authenticate('mitreid', { failureRedirect: '/login' }),
     function(req, res) {
+        // Successful authentication, redirect home.
         res.redirect('/');
 });
 
