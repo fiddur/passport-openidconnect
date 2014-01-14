@@ -24,7 +24,7 @@
     "pkginfo": "0.2.x",
     "passport": "~0.1.1",
     "oauth": "0.9.x",
-    "webfinger": "0.3.x"
+    "webfinger": "0.4.x"
   },
   "devDependencies": {
     "mocha": "1.x.x",
