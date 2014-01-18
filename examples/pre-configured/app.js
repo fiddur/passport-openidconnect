@@ -5,6 +5,7 @@
 var express = require('express');
 var http = require('http');
 var path = require('path');
+var partials = require('express-partials');
 var passport = require('passport');
 // npm passport-openidconnect package is not up to date
 var OpenidConnectStrategy = require('passport-openidconnect').Strategy;
@@ -53,6 +54,8 @@ var app = express();
 app.set('port', process.env.PORT || 80);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+//app.set('view options', {layout: 'views/layout.ejs'});
+app.use(partials());
 app.use(express.favicon());
 app.use(express.logger('dev'));
 app.use(express.json());
