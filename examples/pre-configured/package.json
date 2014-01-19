@@ -7,6 +7,9 @@
   },
   "dependencies": {
     "express": "3.4.7",
-    "ejs": "*"
+    "ejs": "*",
+    "express-partials": ">= 0.0.0",
+    "passport": ">= 0.0.0",
+    "passport-openidconnect": ">= 0.0.0"
   }
 }
