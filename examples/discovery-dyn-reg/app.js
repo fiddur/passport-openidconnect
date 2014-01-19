@@ -13,12 +13,12 @@ var OpenidConnectStrategy = require('passport-openidconnect').Strategy;
 var RP_DOMAIN_NAME = 'localhost.airydrive.org'; //'--insert-your-relying-party-domain-name-here--'
 
 var CLIENT_NAME = 'AiryDrive - test2';
-// your callback urls
-var REDIRECT_URIS = ['http://' + RP_DOMAIN_NAME + '/auth/oidc/callback'];
+// your callback url
+var CALLBACK_URL = '/auth/oidc/callback';
+// your callback uris
+var REDIRECT_URIS = ['http://' + RP_DOMAIN_NAME + CALLBACK_URL];
 // scopes
 var SCOPE = 'profile email';
-// your callback url e.g. from https://mitreid.org/.well-known/openid-configuration/
-var CALLBACK_URL = 'http://' + RP_DOMAIN_NAME + '/auth/oidc/callback';
 
 /* uncomment - if you want initialize Configuration database with Mitreid's data sample
 // register a new client at e.g. https://mitreid.org/manage/dev/dynreg
@@ -26,6 +26,7 @@ var OP_DOMAIN_NAME = 'mitreid.org'; //'--insert-your-openid-provider-domain-name
 
 var CLIENT_ID = 'abf911b1-47ba-4163-881d-2b995cba8a1d';//'--insert-oidc-client-id-here--';
 var CLIENT_SECRET = 'AI0R7dSkCt5ye30lKeMIS35whbIOMYASLvwd-nZeVW7sLJSchpI1z7q_UNugyXTFkTl4AKWdqiwykje_y-msXJA';//'--insert-oidc-client-secret-here--';
+ // OpenID Connect Provider endpoints e.g. from https://mitreid.org/.well-known/openid-configuration/
 var AUTHORIZATION_URL = 'https://' + OP_DOMAIN_NAME + '/authorize';
 var TOKEN_URL = 'https://' + OP_DOMAIN_NAME + '/token';
 var USER_INFO_URL = 'https://' + OP_DOMAIN_NAME + '/userinfo';
@@ -206,17 +207,17 @@ app.get('/login', function(req, res){
 });
 
 app.get('/auth/oidc/login', passport.authenticate('openidconnect',
-  {callbackURL: '/auth/oidc/callback', failureRedirect: '/login'}),
+  {callbackURL: CALLBACK_URL, failureRedirect: '/login'}),
   function(req, res){
         // The request will be redirected to OP for authentication, so this
         // function will not be called.
 });
 
-app.get('/auth/oidc/callback',
+app.get(CALLBACK_URL,
     passport.authenticate('openidconnect', { failureRedirect: '/login' }),
     function(req, res) {
         // Successful authentication, redirect home.
-        res.redirect('/');
+      res.redirect('/');
 });
 
 app.get('/logout', function(req, res){
