@@ -20,6 +20,9 @@ var REDIRECT_URIS = ['http://' + RP_DOMAIN_NAME + CALLBACK_URL];
 // scopes
 var SCOPE = 'profile email';
 
+// Configuration database with oidc and user tables
+var Config = {oidc: [], user: []};
+
 /* uncomment - if you want initialize Configuration database with Mitreid's data sample
 // register a new client at e.g. https://mitreid.org/manage/dev/dynreg
 var OP_DOMAIN_NAME = 'mitreid.org'; //'--insert-your-openid-provider-domain-name-here--'
@@ -30,12 +33,7 @@ var CLIENT_SECRET = 'AI0R7dSkCt5ye30lKeMIS35whbIOMYASLvwd-nZeVW7sLJSchpI1z7q_UNu
 var AUTHORIZATION_URL = 'https://' + OP_DOMAIN_NAME + '/authorize';
 var TOKEN_URL = 'https://' + OP_DOMAIN_NAME + '/token';
 var USER_INFO_URL = 'https://' + OP_DOMAIN_NAME + '/userinfo';
-*/
 
-// Configuration database with oidc and user tables
-var Config = {oidc: [], user: []};
-
-/* uncomment - if you want initialize Configuration database with Mitreid's data sample
 Config.oidc.push({id: 1, provider: {
   issuer: 'https://' + OP_DOMAIN_NAME + '/',
   authorizationURL: AUTHORIZATION_URL,
@@ -45,19 +43,38 @@ Config.oidc.push({id: 1, provider: {
 }, reg: {
   clientSecret: CLIENT_SECRET
 }});
-
-Config.user.push({
-  id: 1, oidc_id: 1, email: 'user@mitreid.org'
-});
 */
 
 passport.serializeUser(function(user, done) {
     done(null, user);
 });
 
-passport.deserializeUser(function(obj, done) {
-    done(null, obj);
+passport.deserializeUser(function(user, done) {
+    done(null, user);
 });
+
+function userFindOrCreate(issuer, sub, userInfo, provider, done) {
+  var email = userInfo && userInfo.email ? userInfo.email : null;
+  if (email) {
+    findUserByEmail(email, function(issuer, userInfo, err, user) {
+      if (!user) {
+        var user_id = Config.user.length + 1;
+        user = {id: user_id, oidc_id: null, sub: userInfo.sub, email: email, displayName: userInfo.displayName};
+        Config.user.push(user);
+      }
+      findOidcByIssuer(issuer, function(user, err, oidc) {
+        if (oidc) {
+          user.oidc_id = oidc.id;
+          done(null, user);
+        } else {
+          done('Cannot select oidc configuration', user);
+        }
+      }.bind(this, user));
+    }.bind(this, issuer, userInfo));
+  } else {
+    done('Cannot select user', null);
+  }
+}
 
 function findOidcById(id, fn) {
   for (var i = 0, len = Config.oidc.length; i < len; i++) {
@@ -89,23 +106,16 @@ function findUserByEmail(email, fn) {
   return fn(null, null);
 }
 
-function save_configuration(identifier, provider, reg, next) {
+function saveConfig(provider, reg, next) {
   var oidc_id = Config.oidc.length + 1;
   Config.oidc.push({id: oidc_id, provider: provider, reg: reg});
-
-  var user_id = Config.user.length + 1;
-  Config.user.push({id: user_id, oidc_id: oidc_id, email: identifier});
   return next();
 };
 
-function update_configuration(identifier, issuer, done) {
+function loadConfigByIssuer(issuer, done) {
   findOidcByIssuer(issuer, function(err, oidc) {
     if (oidc) {
-      var user_id = Config.user.length + 1;
-      Config.user.push({id: user_id, oidc_id: oidc.id, email: identifier});
-
       return done(null, {
-        identifier: identifier,
         authorizationURL: oidc.provider.authorizationURL,
         tokenURL: oidc.provider.tokenURL,
         userInfoURL: oidc.provider.userInfoURL,
@@ -120,53 +130,62 @@ function update_configuration(identifier, issuer, done) {
 
 };
 
-function load_configuration(identifier, done) {
+function loadConfigByIdentifier(identifier, done) {
   findUserByEmail(identifier, function(err, user) {
     if (user) {
-      findOidcById(user.oidc_id, function(err, oidc) {
-        if (oidc) {
-          return done(err, {
-            identifier: identifier,
-            authorizationURL: oidc.provider.authorizationURL,
-            tokenURL: oidc.provider.tokenURL,
-            userInfoURL: oidc.provider.userInfoURL,
-            clientID: oidc.provider.clientID,
-            clientSecret: oidc.reg.clientSecret,
-            callbackURL: CALLBACK_URL
-          });
-        } else {
-          return done('Oidc not found', null);
-        }
-      });
+      if (user.oidc_id) {
+        findOidcById(user.oidc_id, function(err, oidc) {
+          if (oidc) {
+            return done(err, {
+              authorizationURL: oidc.provider.authorizationURL,
+              tokenURL: oidc.provider.tokenURL,
+              userInfoURL: oidc.provider.userInfoURL,
+              clientID: oidc.provider.clientID,
+              clientSecret: oidc.reg.clientSecret,
+              callbackURL: CALLBACK_URL
+            });
+          } else {
+            return done('Cannot select oidc configuration', null);
+          }
+        });
+      } else {
+        return done(err, null);
+      }
     } else {
       return done(err, null);
     }
   })
 };
 
-var options = {};
-options.name = CLIENT_NAME;
-options.redirectURI = REDIRECT_URIS;
-
-require('passport-openidconnect').config(update_configuration);
-
-var registration = require('passport-openidconnect').registration(options, save_configuration);
-require('passport-openidconnect').register(registration);
-
 var strategy = new OpenidConnectStrategy({
-  identifierField: 'resource',
+  identifierField: 'emailField',
   scope: SCOPE
 },
-    function(iss, sub, profile, accessToken, refreshToken, done) {
-        process.nextTick(function () {
-            return done(null, profile);
-        });
-    }
+  function(iss, sub, userInfo, accessToken, refreshToken, done) {
+    process.nextTick(function () {
+
+      // find or create the user based on their email address
+      userFindOrCreate(iss, sub, userInfo, 'openidconnect', function(err, user) {
+        if (err)
+          console.log(err);
+        done(err, user);
+      });
+
+    });
+  }
 );
 
 passport.use(strategy);
 
-strategy.configure(load_configuration);
+strategy.configure(loadConfigByIdentifier);
+require('passport-openidconnect').config(loadConfigByIssuer);
+
+var options = {};
+options.name = CLIENT_NAME;
+options.redirectURI = REDIRECT_URIS;
+
+var registration = require('passport-openidconnect').registration(options, saveConfig);
+require('passport-openidconnect').register(registration);
 
 var app = express();
 
@@ -175,7 +194,6 @@ app.set('port', process.env.PORT || 80);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(partials());
-app.use(express.favicon());
 app.use(express.logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded());
@@ -195,34 +213,34 @@ if ('development' == app.get('env')) {
 }
 
 app.get('/', function(req, res){
-    res.render('index', { user: req.user });
+  res.render('index', { user: req.user });
 });
 
 app.get('/account', ensureAuthenticated, function(req, res){
-    res.render('account', { user: req.user });
+  res.render('account', { user: req.user });
 });
 
 app.get('/login', function(req, res){
-    res.render('login', { user: req.user });
+  res.render('login', { user: req.user });
 });
 
 app.get('/auth/oidc/login', passport.authenticate('openidconnect',
   {callbackURL: CALLBACK_URL, failureRedirect: '/login'}),
   function(req, res){
-        // The request will be redirected to OP for authentication, so this
-        // function will not be called.
+    // The request will be redirected to OP for authentication, so this
+    // function will not be called.
 });
 
-app.get(CALLBACK_URL,
-    passport.authenticate('openidconnect', { failureRedirect: '/login' }),
-    function(req, res) {
-        // Successful authentication, redirect home.
-      res.redirect('/');
+app.get(CALLBACK_URL, passport.authenticate('openidconnect',
+  {callbackURL: CALLBACK_URL, failureRedirect: '/login'}),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
 });
 
 app.get('/logout', function(req, res){
-    req.logout();
-    res.redirect('/');
+  req.logout();
+  res.redirect('/');
 });
 
 http.createServer(app).listen(app.get('port'), function(){
@@ -235,6 +253,6 @@ http.createServer(app).listen(app.get('port'), function(){
 //   the request will proceed.  Otherwise, the user will be redirected to the
 //   login page.
 function ensureAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) { return next(); }
-    res.redirect('/login');
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login');
 }

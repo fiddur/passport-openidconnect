@@ -24,11 +24,11 @@ var TOKEN_URL = 'https://' + OP_DOMAIN_NAME + '/token';
 var USER_INFO_URL = 'https://' + OP_DOMAIN_NAME + '/userinfo';
 
 passport.serializeUser(function(user, done) {
-    done(null, user);
+  done(null, user);
 });
 
 passport.deserializeUser(function(obj, done) {
-    done(null, obj);
+  done(null, obj);
 });
 
 passport.use(new OpenidConnectStrategy({
@@ -40,11 +40,11 @@ passport.use(new OpenidConnectStrategy({
   tokenURL: TOKEN_URL,
   userInfoURL: USER_INFO_URL
 },
-    function(iss, sub, profile, accessToken, refreshToken, done) {
-        process.nextTick(function () {
-            return done(null, profile);
-        });
-    }
+  function(iss, sub, profile, accessToken, refreshToken, done) {
+    process.nextTick(function () {
+      return done(null, profile);
+    });
+  }
 ));
 
 var app = express();
@@ -75,34 +75,34 @@ if ('development' == app.get('env')) {
 }
 
 app.get('/', function(req, res){
-    res.render('index', { user: req.user });
+  res.render('index', { user: req.user });
 });
 
 app.get('/account', ensureAuthenticated, function(req, res){
-    res.render('account', { user: req.user });
+  res.render('account', { user: req.user });
 });
 
 app.get('/login', function(req, res){
-    res.render('login', { user: req.user });
+  res.render('login', { user: req.user });
 });
 
 app.get('/auth/oidc/login', passport.authenticate('openidconnect',
   {callbackURL: CALLBACK_URL, failureRedirect: '/login'}),
   function(req, res){
-        // The request will be redirected to OP for authentication, so this
-        // function will not be called.
+    // The request will be redirected to OP for authentication, so this
+    // function will not be called.
 });
 
-app.get(CALLBACK_URL,
-    passport.authenticate('openidconnect', { failureRedirect: '/login' }),
-    function(req, res) {
-        // Successful authentication, redirect home.
-        res.redirect('/');
+app.get(CALLBACK_URL, passport.authenticate('openidconnect',
+  {callbackURL: CALLBACK_URL, failureRedirect: '/login'}),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
 });
 
 app.get('/logout', function(req, res){
-    req.logout();
-    res.redirect('/');
+  req.logout();
+  res.redirect('/');
 });
 
 http.createServer(app).listen(app.get('port'), function(){
@@ -115,6 +115,6 @@ http.createServer(app).listen(app.get('port'), function(){
 //   the request will proceed.  Otherwise, the user will be redirected to the
 //   login page.
 function ensureAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) { return next(); }
-    res.redirect('/login');
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login');
 }
