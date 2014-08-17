@@ -45,6 +45,11 @@ Config.oidc.push({id: 1, provider: {
 }});
 */
 
+function removeTrailingSlashes(str)
+{
+  return str.replace(/\/+$/, "");
+}
+
 passport.serializeUser(function(user, done) {
     done(null, user);
 });
@@ -89,7 +94,7 @@ function findOidcById(id, fn) {
 function findOidcByIssuer(iss, fn) {
   for (var i = 0, len = Config.oidc.length; i < len; i++) {
     var oidc = Config.oidc[i];
-    if (oidc.provider.issuer === iss) {
+    if (removeTrailingSlashes(oidc.provider.issuer) === removeTrailingSlashes(iss)) {
       return fn(null, oidc);
     }
   }
