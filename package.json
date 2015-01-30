@@ -21,14 +21,14 @@
   } ],
   "main": "./lib",
   "dependencies": {
-    "pkginfo": "0.2.x",
-    "passport": "~0.1.1",
-    "oauth": "0.9.x",
-    "webfinger": "0.4.x"
+    "pkginfo": "^0.3.0",
+    "passport": "^0.2.1",
+    "oauth": "^0.9.12",
+    "webfinger": "^0.4.2"
   },
   "devDependencies": {
-    "mocha": "1.x.x",
-    "chai": "1.x.x"
+    "mocha": "^2.1.0",
+    "chai": "^1.10.0"
   },
   "scripts": {
     "test": "NODE_PATH=./lib node_modules/.bin/mocha --reporter spec --require test/node/bootstrap test/*.test.js"
