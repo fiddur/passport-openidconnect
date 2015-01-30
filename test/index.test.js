@@ -20,7 +20,6 @@ describe('passport-openid', function() {
   it('should export discovery mechanisms', function() {
     expect(openid.discovery).to.be.an('object');
     expect(openid.discovery.webfinger).to.be.a('function');
-    expect(openid.discovery.lrdd).to.be.a('function');
   });
   
 });
