@@ -24,7 +24,7 @@
     "pkginfo": "^0.3.0",
     "passport": "^0.2.1",
     "oauth": "^0.9.12",
-    "webfinger": "^0.4.2"
+    "webfinger": "dwaite/webfinger"
   },
   "devDependencies": {
     "mocha": "^2.1.0",
