@@ -46,12 +46,15 @@
     "eslint-plugin-jsx-a11y": "^2.2.2",
     "eslint-plugin-react": "^6.3.0",
     "make-node": "0.3.x",
-    "mocha": "2.x.x"
+    "mocha": "2.x.x",
+    "sinon": "^1.17.6"
   },
   "engines": {
     "node": ">= 0.6.0"
   },
   "scripts": {
-    "test": "node_modules/.bin/eslint lib && NODE_PATH=./lib node_modules/.bin/mocha --reporter spec --require test/bootstrap/node test/*.test.js"
+    "test": "node_modules/.bin/eslint lib && NODE_PATH=./lib node_modules/.bin/mocha --reporter spec --require test/bootstrap/node test/*.test.js",
+    "unit": "NODE_PATH=./lib node_modules/.bin/mocha --reporter spec --require test/bootstrap/node test/*.test.js",
+    "watch": "NODE_PATH=./lib node_modules/.bin/mocha --reporter spec --watch --require test/bootstrap/node test/*.test.js"
   }
 }

@@ -21,6 +21,7 @@ module.exports = {
     'block-scoped-var': 'off',
     'consistent-return': 'off',
     'eqeqeq': 'off',
+    'func-names': 'off',
     'guard-for-in': 'off',
     'no-else-return': 'off',
     'no-param-reassign': 'off',
